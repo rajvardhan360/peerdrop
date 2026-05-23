@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import socket from "../utils/socket";
 import { API_URL } from "../config";
 import {
@@ -91,59 +92,109 @@ function Join() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-100 gap-4">
-      <h1 className="text-4xl font-bold">Join PeerDrop</h1>
-
-      <div className="text-2xl font-semibold">
-        Room: {roomCode}
-      </div>
-
-      <button
-        onClick={joinRoom}
-        className="bg-green-500 text-white px-6 py-3 rounded-xl"
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 flex justify-center items-center p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 30 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl p-8 w-full max-w-md text-white"
       >
-        Join Session
-      </button>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold">PeerDrop</h1>
+          <p className="text-gray-300 mt-2">
+            Global Browser File Transfer
+          </p>
+        </div>
 
-      {joined && (
-        <>
-          <div className="text-blue-600 text-xl">
-            Connected Successfully
+        <div className="text-center mb-6">
+          <div className="text-gray-300">Room Code</div>
+          <div className="text-4xl font-bold mt-2 text-cyan-300 tracking-widest">
+            {roomCode}
           </div>
+        </div>
 
-          <div className="text-xl">
-            Users Connected: {usersCount}
-          </div>
+        {!joined && (
+          <button
+            onClick={joinRoom}
+            className="w-full bg-cyan-500 hover:bg-cyan-600 transition text-white font-bold py-4 rounded-2xl"
+          >
+            Join Session
+          </button>
+        )}
 
-          <input
-            type="file"
-            onChange={handleFileChange}
-            className="border p-2"
-          />
-
-          {uploadProgress > 0 && (
-            <div className="text-blue-600 font-semibold">
-              Uploading: {uploadProgress}%
+        {joined && (
+          <>
+            <div className="bg-green-500/20 border border-green-400 px-4 py-3 rounded-2xl text-center text-green-300 font-semibold mb-6">
+              Connected Successfully
             </div>
-          )}
 
-          {downloadProgress > 0 && (
-            <div className="text-purple-600 font-semibold">
-              Downloading: {downloadProgress}%
+            <div className="text-center mb-6">
+              Users Connected:{" "}
+              <span className="font-bold text-cyan-300">
+                {usersCount}
+              </span>
             </div>
-          )}
 
-          {receivedFile && (
-            <a
-              href={receivedFile.url}
-              download={receivedFile.fileName}
-              className="bg-green-500 text-white px-6 py-3 rounded-xl"
-            >
-              Download {receivedFile.fileName}
-            </a>
-          )}
-        </>
-      )}
+            <label className="block cursor-pointer">
+              <div className="border-2 border-dashed border-cyan-400 rounded-2xl p-8 text-center hover:bg-white/10 transition">
+                <div className="text-2xl mb-2">📁</div>
+                <div className="text-lg font-semibold">
+                  Tap to Upload File
+                </div>
+                <div className="text-sm text-gray-300 mt-2">
+                  PDF, Images, Videos, ZIP, Docs
+                </div>
+              </div>
+
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+
+            {uploadProgress > 0 && (
+              <div className="mt-6">
+                <div className="mb-2 text-cyan-300 font-semibold">
+                  Uploading: {uploadProgress}%
+                </div>
+
+                <div className="w-full bg-white/20 rounded-full h-4">
+                  <div
+                    className="bg-cyan-400 h-4 rounded-full transition-all"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {downloadProgress > 0 && (
+              <div className="mt-6">
+                <div className="mb-2 text-purple-300 font-semibold">
+                  Downloading: {downloadProgress}%
+                </div>
+
+                <div className="w-full bg-white/20 rounded-full h-4">
+                  <div
+                    className="bg-purple-400 h-4 rounded-full transition-all"
+                    style={{ width: `${downloadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {receivedFile && (
+              <a
+                href={receivedFile.url}
+                download={receivedFile.fileName}
+                className="block mt-8 bg-green-500 hover:bg-green-600 transition text-center text-white font-bold py-4 rounded-2xl"
+              >
+                Download {receivedFile.fileName}
+              </a>
+            )}
+          </>
+        )}
+      </motion.div>
     </div>
   );
 }

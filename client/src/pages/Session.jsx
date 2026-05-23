@@ -1,5 +1,6 @@
 import { QRCodeCanvas } from "qrcode.react";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import socket from "../utils/socket";
 import { APP_URL } from "../config";
 import {
@@ -79,37 +80,91 @@ function Session({ roomCode }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-100 gap-6">
-      <h1 className="text-4xl font-bold">PeerDrop Session</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex justify-center items-center p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 30 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl p-10 w-full max-w-xl text-white"
+      >
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold">PeerDrop</h1>
+            <p className="text-gray-300 mt-2">
+              Global Browser File Transfer
+            </p>
+          </div>
 
-      <div className="bg-white p-8 rounded-2xl shadow-lg flex flex-col items-center gap-4">
-        <h2 className="text-2xl font-semibold">Room Code</h2>
-
-        <div className="text-3xl font-bold text-blue-600">
-          {roomCode}
+          <div className="bg-green-500/20 border border-green-400 px-4 py-2 rounded-full text-green-300 font-semibold">
+            Connected
+          </div>
         </div>
 
-        <QRCodeCanvas value={joinLink} size={220} />
-
-        <div className="text-xl">
-          Users Connected: {usersCount}
+        <div className="text-center mb-8">
+          <h2 className="text-xl text-gray-300">Room Code</h2>
+          <div className="text-5xl font-bold mt-3 tracking-widest text-cyan-300">
+            {roomCode}
+          </div>
         </div>
 
-        <input
-          type="file"
-          onChange={handleFileChange}
-          className="border p-2"
-        />
+        <div className="flex justify-center mb-8">
+          <div className="bg-white p-4 rounded-2xl">
+            <QRCodeCanvas value={joinLink} size={220} />
+          </div>
+        </div>
+
+        <div className="text-center text-lg mb-6">
+          Users Connected:{" "}
+          <span className="font-bold text-cyan-300">
+            {usersCount}
+          </span>
+        </div>
+
+        <label className="block cursor-pointer">
+          <div className="border-2 border-dashed border-cyan-400 rounded-2xl p-8 text-center hover:bg-white/10 transition">
+            <div className="text-2xl mb-2">📁</div>
+            <div className="text-lg font-semibold">
+              Click to Upload File
+            </div>
+            <div className="text-sm text-gray-300 mt-2">
+              PDF, Images, Videos, ZIP, Docs
+            </div>
+          </div>
+
+          <input
+            type="file"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+        </label>
 
         {uploadProgress > 0 && (
-          <div className="text-blue-600 font-semibold">
-            Uploading: {uploadProgress}%
+          <div className="mt-6">
+            <div className="mb-2 text-cyan-300 font-semibold">
+              Uploading: {uploadProgress}%
+            </div>
+
+            <div className="w-full bg-white/20 rounded-full h-4">
+              <div
+                className="bg-cyan-400 h-4 rounded-full transition-all"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
           </div>
         )}
 
         {downloadProgress > 0 && (
-          <div className="text-purple-600 font-semibold">
-            Downloading: {downloadProgress}%
+          <div className="mt-6">
+            <div className="mb-2 text-purple-300 font-semibold">
+              Downloading: {downloadProgress}%
+            </div>
+
+            <div className="w-full bg-white/20 rounded-full h-4">
+              <div
+                className="bg-purple-400 h-4 rounded-full transition-all"
+                style={{ width: `${downloadProgress}%` }}
+              />
+            </div>
           </div>
         )}
 
@@ -117,12 +172,12 @@ function Session({ roomCode }) {
           <a
             href={receivedFile.url}
             download={receivedFile.fileName}
-            className="bg-green-500 text-white px-6 py-3 rounded-xl"
+            className="block mt-8 bg-green-500 hover:bg-green-600 transition text-center text-white font-bold py-4 rounded-2xl"
           >
             Download {receivedFile.fileName}
           </a>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
