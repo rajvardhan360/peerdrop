@@ -1,4 +1,12 @@
-const HOST = window.location.hostname;
+const apiUrlFromEnv = import.meta.env.VITE_API_URL;
 
-export const API_URL = `http://${HOST}:5000`;
-export const APP_URL = `http://${HOST}:5173`;
+const fallbackLocalApi = "http://localhost:5000";
+
+export const API_URL = apiUrlFromEnv || fallbackLocalApi;
+
+export const APP_URL = window.location.origin;
+
+export default {
+  API_URL,
+  APP_URL,
+};
