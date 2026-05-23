@@ -86,15 +86,15 @@ function Join() {
       return (
         <div
           key={index}
-          className="bg-white/10 p-4 rounded-2xl"
+          className="bg-white/10 rounded-2xl overflow-hidden shadow-lg hover:bg-white/20 transition"
         >
           <img
             src={file.fileUrl}
             alt={file.fileName}
-            className="w-full rounded-xl max-h-80 object-cover"
+            className="w-full h-48 object-cover"
           />
 
-          <div className="mt-3 text-cyan-300 break-all">
+          <div className="p-3 text-sm text-cyan-300 truncate">
             {file.fileName}
           </div>
         </div>
@@ -105,16 +105,16 @@ function Join() {
       return (
         <div
           key={index}
-          className="bg-white/10 p-4 rounded-2xl"
+          className="bg-white/10 rounded-2xl overflow-hidden shadow-lg hover:bg-white/20 transition"
         >
           <video
             controls
-            className="w-full rounded-xl max-h-80"
+            className="w-full h-48 object-cover"
           >
             <source src={file.fileUrl} />
           </video>
 
-          <div className="mt-3 text-cyan-300 break-all">
+          <div className="p-3 text-sm text-cyan-300 truncate">
             {file.fileName}
           </div>
         </div>
@@ -127,9 +127,13 @@ function Join() {
         href={file.fileUrl}
         target="_blank"
         rel="noreferrer"
-        className="block bg-white/10 hover:bg-white/20 transition p-4 rounded-2xl break-all"
+        className="bg-white/10 rounded-2xl p-5 hover:bg-white/20 transition shadow-lg flex flex-col justify-center items-center h-48"
       >
-        📄 {file.fileName}
+        <div className="text-5xl mb-3">📄</div>
+
+        <div className="text-sm text-cyan-300 text-center break-words">
+          {file.fileName}
+        </div>
       </a>
     );
   };
@@ -140,60 +144,81 @@ function Join() {
         initial={{ opacity: 0, y: 25 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl p-8 w-full max-w-md text-white"
+        className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl p-10 w-full max-w-5xl text-white"
       >
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold">PeerDrop 360</h1>
-          <p className="text-gray-300 mt-2">
-            Group File Sharing
-          </p>
-        </div>
-
-        <div className="text-center mb-6">
-          <div className="text-gray-300">Room Code</div>
-          <div className="text-4xl font-bold mt-2 text-cyan-300 tracking-widest">
-            {roomCode}
-          </div>
-        </div>
-
-        {!joined && (
-          <button
-            onClick={joinRoom}
-            className="w-full bg-cyan-500 hover:bg-cyan-600 transition text-white font-bold py-4 rounded-2xl"
-          >
-            Join Session
-          </button>
-        )}
-
-        {joined && (
-          <>
-            <div className="text-center mb-6">
-              Users Connected: {usersCount}
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold">PeerDrop 360</h1>
+              <p className="text-gray-300 mt-2">
+                Group File Sharing
+              </p>
             </div>
 
-            <label className="block cursor-pointer">
-              <div className="border-2 border-dashed border-cyan-400 rounded-2xl p-8 text-center hover:bg-white/10 transition">
-                Upload File
+            <div className="text-center mb-6">
+              <div className="text-gray-300">Room Code</div>
+              <div className="text-4xl font-bold mt-2 text-cyan-300 tracking-widest">
+                {roomCode}
               </div>
+            </div>
 
-              <input
-                type="file"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </label>
-
-            {uploadProgress > 0 && (
-              <div className="mt-6">
-                Uploading: {uploadProgress}%
-              </div>
+            {!joined && (
+              <button
+                onClick={joinRoom}
+                className="w-full bg-cyan-500 hover:bg-cyan-600 transition text-white font-bold py-4 rounded-2xl"
+              >
+                Join Session
+              </button>
             )}
 
-            <div className="mt-8 space-y-4 max-h-96 overflow-y-auto">
-              {files.map(renderFile)}
-            </div>
-          </>
-        )}
+            {joined && (
+              <>
+                <div className="text-center mb-6">
+                  Users Connected:{" "}
+                  <span className="font-bold text-cyan-300">
+                    {usersCount}
+                  </span>
+                </div>
+
+                <label className="block cursor-pointer">
+                  <div className="border-2 border-dashed border-cyan-400 rounded-2xl p-8 text-center hover:bg-white/10 transition">
+                    <div className="text-2xl mb-2">📁</div>
+                    <div className="text-lg font-semibold">
+                      Upload File
+                    </div>
+                  </div>
+
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+
+                {uploadProgress > 0 && (
+                  <div className="mt-6">
+                    <div className="mb-2 text-cyan-300 font-semibold">
+                      Uploading: {uploadProgress}%
+                    </div>
+
+                    <div className="w-full bg-white/20 rounded-full h-4">
+                      <div
+                        className="bg-cyan-400 h-4 rounded-full"
+                        style={{
+                          width: `${uploadProgress}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[700px] overflow-y-auto">
+            {files.map(renderFile)}
+          </div>
+        </div>
       </motion.div>
     </div>
   );
