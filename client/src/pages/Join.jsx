@@ -73,6 +73,67 @@ function Join() {
     }
   };
 
+  const renderFile = (file, index) => {
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(
+      file.fileName
+    );
+
+    const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(
+      file.fileName
+    );
+
+    if (isImage) {
+      return (
+        <div
+          key={index}
+          className="bg-white/10 p-4 rounded-2xl"
+        >
+          <img
+            src={file.fileUrl}
+            alt={file.fileName}
+            className="w-full rounded-xl max-h-80 object-cover"
+          />
+
+          <div className="mt-3 text-cyan-300 break-all">
+            {file.fileName}
+          </div>
+        </div>
+      );
+    }
+
+    if (isVideo) {
+      return (
+        <div
+          key={index}
+          className="bg-white/10 p-4 rounded-2xl"
+        >
+          <video
+            controls
+            className="w-full rounded-xl max-h-80"
+          >
+            <source src={file.fileUrl} />
+          </video>
+
+          <div className="mt-3 text-cyan-300 break-all">
+            {file.fileName}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <a
+        key={index}
+        href={file.fileUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="block bg-white/10 hover:bg-white/20 transition p-4 rounded-2xl break-all"
+      >
+        📄 {file.fileName}
+      </a>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 flex justify-center items-center p-6">
       <motion.div
@@ -83,7 +144,9 @@ function Join() {
       >
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold">PeerDrop 360</h1>
-          <p className="text-gray-300 mt-2">Group File Sharing</p>
+          <p className="text-gray-300 mt-2">
+            Group File Sharing
+          </p>
         </div>
 
         <div className="text-center mb-6">
@@ -126,18 +189,8 @@ function Join() {
               </div>
             )}
 
-            <div className="mt-8 space-y-4">
-              {files.map((file, index) => (
-                <a
-                  key={index}
-                  href={file.fileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block bg-white/10 p-4 rounded-2xl"
-                >
-                  📄 {file.fileName}
-                </a>
-              ))}
+            <div className="mt-8 space-y-4 max-h-96 overflow-y-auto">
+              {files.map(renderFile)}
             </div>
           </>
         )}

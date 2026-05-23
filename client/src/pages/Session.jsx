@@ -49,8 +49,7 @@ function Session() {
         {
           onUploadProgress: (progressEvent) => {
             const percent = Math.round(
-              (progressEvent.loaded * 100) /
-                progressEvent.total
+              (progressEvent.loaded * 100) / progressEvent.total
             );
 
             setUploadProgress(percent);
@@ -61,6 +60,67 @@ function Session() {
       console.error(error);
       alert("Upload failed");
     }
+  };
+
+  const renderFile = (file, index) => {
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(
+      file.fileName
+    );
+
+    const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(
+      file.fileName
+    );
+
+    if (isImage) {
+      return (
+        <div
+          key={index}
+          className="bg-white/10 p-4 rounded-2xl"
+        >
+          <img
+            src={file.fileUrl}
+            alt={file.fileName}
+            className="w-full rounded-xl max-h-80 object-cover"
+          />
+
+          <div className="mt-3 text-cyan-300 break-all">
+            {file.fileName}
+          </div>
+        </div>
+      );
+    }
+
+    if (isVideo) {
+      return (
+        <div
+          key={index}
+          className="bg-white/10 p-4 rounded-2xl"
+        >
+          <video
+            controls
+            className="w-full rounded-xl max-h-80"
+          >
+            <source src={file.fileUrl} />
+          </video>
+
+          <div className="mt-3 text-cyan-300 break-all">
+            {file.fileName}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <a
+        key={index}
+        href={file.fileUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="block bg-white/10 hover:bg-white/20 transition p-4 rounded-2xl break-all"
+      >
+        📄 {file.fileName}
+      </a>
+    );
   };
 
   return (
@@ -134,18 +194,8 @@ function Session() {
           </div>
         )}
 
-        <div className="mt-8 space-y-4">
-          {files.map((file, index) => (
-            <a
-              key={index}
-              href={file.fileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="block bg-white/10 hover:bg-white/20 transition p-4 rounded-2xl"
-            >
-              📄 {file.fileName}
-            </a>
-          ))}
+        <div className="mt-8 space-y-4 max-h-96 overflow-y-auto">
+          {files.map(renderFile)}
         </div>
       </motion.div>
     </div>
