@@ -1,15 +1,17 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
+import Session from "./pages/Session";
 import Join from "./pages/Join";
 
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/session/:roomCode" element={<Session />} />
         <Route path="/join/:roomCode" element={<Join />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
 
