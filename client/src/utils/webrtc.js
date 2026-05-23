@@ -4,7 +4,27 @@ let dataChannel = null;
 const config = {
   iceServers: [
     {
-      urls: "stun:stun.l.google.com:19302",
+      urls: "stun:stun.relay.metered.ca:80",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:80",
+      username: "46d5957567ac9983a78cee74",
+      credential: "1thlnT3YyzVJkMjx",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:80?transport=tcp",
+      username: "46d5957567ac9983a78cee74",
+      credential: "1thlnT3YyzVJkMjx",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:443",
+      username: "46d5957567ac9983a78cee74",
+      credential: "1thlnT3YyzVJkMjx",
+    },
+    {
+      urls: "turns:global.relay.metered.ca:443?transport=tcp",
+      username: "46d5957567ac9983a78cee74",
+      credential: "1thlnT3YyzVJkMjx",
     },
   ],
 };
@@ -39,12 +59,20 @@ export function createPeerConnection(
     }
   };
 
+  peerConnection.onconnectionstatechange = () => {
+    console.log("Connection state:", peerConnection.connectionState);
+  };
+
   return peerConnection;
 }
 
 function setupDataChannel(onMessage, onFileReceived) {
   dataChannel.onopen = () => {
     console.log("Data channel open");
+  };
+
+  dataChannel.onclose = () => {
+    console.log("Data channel closed");
   };
 
   dataChannel.onmessage = async (event) => {
@@ -81,6 +109,7 @@ function setupDataChannel(onMessage, onFileReceived) {
 
 export async function createOffer(socket, roomCode) {
   const offer = await peerConnection.createOffer();
+
   await peerConnection.setLocalDescription(offer);
 
   socket.emit("offer", {
@@ -112,11 +141,16 @@ export async function handleOffer(
     }
   };
 
+  peerConnection.onconnectionstatechange = () => {
+    console.log("Connection state:", peerConnection.connectionState);
+  };
+
   await peerConnection.setRemoteDescription(
     new RTCSessionDescription(offer)
   );
 
   const answer = await peerConnection.createAnswer();
+
   await peerConnection.setLocalDescription(answer);
 
   socket.emit("answer", {
@@ -132,25 +166,18 @@ export async function handleAnswer(answer) {
 }
 
 export async function handleIceCandidate(candidate) {
-  await peerConnection.addIceCandidate(
-    new RTCIceCandidate(candidate)
-  );
-}
-
-export function sendMessage(message) {
-  if (dataChannel && dataChannel.readyState === "open") {
-    dataChannel.send(
-      JSON.stringify({
-        type: "message",
-        text: message,
-      })
+  try {
+    await peerConnection.addIceCandidate(
+      new RTCIceCandidate(candidate)
     );
+  } catch (error) {
+    console.error("ICE error:", error);
   }
 }
 
 export async function sendFile(file) {
   if (!dataChannel || dataChannel.readyState !== "open") {
-    alert("Connection not ready");
+    alert("Connection not ready. Wait a few seconds.");
     return;
   }
 
