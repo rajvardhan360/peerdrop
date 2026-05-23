@@ -14,9 +14,12 @@ import {
 
 function Join() {
   const { roomCode } = useParams();
+
   const [joined, setJoined] = useState(false);
   const [usersCount, setUsersCount] = useState(0);
   const [receivedFile, setReceivedFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   const joinRoom = async () => {
     try {
@@ -32,6 +35,9 @@ function Join() {
         () => {},
         (fileData) => {
           setReceivedFile(fileData);
+        },
+        (progress) => {
+          setDownloadProgress(progress);
         }
       );
 
@@ -51,6 +57,9 @@ function Join() {
           () => {},
           (fileData) => {
             setReceivedFile(fileData);
+          },
+          (progress) => {
+            setDownloadProgress(progress);
           }
         );
       });
@@ -71,8 +80,13 @@ function Join() {
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
+
     if (file) {
-      await sendFile(file);
+      setUploadProgress(0);
+
+      await sendFile(file, (progress) => {
+        setUploadProgress(progress);
+      });
     }
   };
 
@@ -106,6 +120,18 @@ function Join() {
             onChange={handleFileChange}
             className="border p-2"
           />
+
+          {uploadProgress > 0 && (
+            <div className="text-blue-600 font-semibold">
+              Uploading: {uploadProgress}%
+            </div>
+          )}
+
+          {downloadProgress > 0 && (
+            <div className="text-purple-600 font-semibold">
+              Downloading: {downloadProgress}%
+            </div>
+          )}
 
           {receivedFile && (
             <a

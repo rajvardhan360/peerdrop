@@ -16,6 +16,8 @@ function Session({ roomCode }) {
 
   const [usersCount, setUsersCount] = useState(0);
   const [receivedFile, setReceivedFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   useEffect(() => {
     socket.emit("join-room", roomCode);
@@ -26,6 +28,9 @@ function Session({ roomCode }) {
       () => {},
       (fileData) => {
         setReceivedFile(fileData);
+      },
+      (progress) => {
+        setDownloadProgress(progress);
       }
     );
 
@@ -45,6 +50,9 @@ function Session({ roomCode }) {
         () => {},
         (fileData) => {
           setReceivedFile(fileData);
+        },
+        (progress) => {
+          setDownloadProgress(progress);
         }
       );
     });
@@ -60,8 +68,13 @@ function Session({ roomCode }) {
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
+
     if (file) {
-      await sendFile(file);
+      setUploadProgress(0);
+
+      await sendFile(file, (progress) => {
+        setUploadProgress(progress);
+      });
     }
   };
 
@@ -88,6 +101,18 @@ function Session({ roomCode }) {
           className="border p-2"
         />
 
+        {uploadProgress > 0 && (
+          <div className="text-blue-600 font-semibold">
+            Uploading: {uploadProgress}%
+          </div>
+        )}
+
+        {downloadProgress > 0 && (
+          <div className="text-purple-600 font-semibold">
+            Downloading: {downloadProgress}%
+          </div>
+        )}
+
         {receivedFile && (
           <a
             href={receivedFile.url}
@@ -97,10 +122,6 @@ function Session({ roomCode }) {
             Download {receivedFile.fileName}
           </a>
         )}
-
-        <p className="text-gray-600">
-          Scan QR from your phone to join
-        </p>
       </div>
     </div>
   );

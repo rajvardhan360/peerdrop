@@ -32,22 +32,25 @@ const config = {
 let receivedChunks = [];
 let incomingFileName = "";
 let incomingFileType = "";
+let incomingFileSize = 0;
+let receivedBytes = 0;
 
 export function createPeerConnection(
   socket,
   roomCode,
   onMessage,
-  onFileReceived
+  onFileReceived,
+  onProgress
 ) {
   peerConnection = new RTCPeerConnection(config);
 
   dataChannel = peerConnection.createDataChannel("fileTransfer");
 
-  setupDataChannel(onMessage, onFileReceived);
+  setupDataChannel(onMessage, onFileReceived, onProgress);
 
   peerConnection.ondatachannel = (event) => {
     dataChannel = event.channel;
-    setupDataChannel(onMessage, onFileReceived);
+    setupDataChannel(onMessage, onFileReceived, onProgress);
   };
 
   peerConnection.onicecandidate = (event) => {
@@ -59,20 +62,12 @@ export function createPeerConnection(
     }
   };
 
-  peerConnection.onconnectionstatechange = () => {
-    console.log("Connection state:", peerConnection.connectionState);
-  };
-
   return peerConnection;
 }
 
-function setupDataChannel(onMessage, onFileReceived) {
+function setupDataChannel(onMessage, onFileReceived, onProgress) {
   dataChannel.onopen = () => {
     console.log("Data channel open");
-  };
-
-  dataChannel.onclose = () => {
-    console.log("Data channel closed");
   };
 
   dataChannel.onmessage = async (event) => {
@@ -86,7 +81,9 @@ function setupDataChannel(onMessage, onFileReceived) {
       if (data.type === "file-info") {
         incomingFileName = data.fileName;
         incomingFileType = data.fileType;
+        incomingFileSize = data.fileSize;
         receivedChunks = [];
+        receivedBytes = 0;
       }
 
       if (data.type === "file-complete") {
@@ -103,6 +100,13 @@ function setupDataChannel(onMessage, onFileReceived) {
       }
     } else {
       receivedChunks.push(event.data);
+      receivedBytes += event.data.byteLength;
+
+      const progress = Math.floor(
+        (receivedBytes / incomingFileSize) * 100
+      );
+
+      onProgress(progress);
     }
   };
 }
@@ -123,13 +127,14 @@ export async function handleOffer(
   roomCode,
   offer,
   onMessage,
-  onFileReceived
+  onFileReceived,
+  onProgress
 ) {
   peerConnection = new RTCPeerConnection(config);
 
   peerConnection.ondatachannel = (event) => {
     dataChannel = event.channel;
-    setupDataChannel(onMessage, onFileReceived);
+    setupDataChannel(onMessage, onFileReceived, onProgress);
   };
 
   peerConnection.onicecandidate = (event) => {
@@ -139,10 +144,6 @@ export async function handleOffer(
         candidate: event.candidate,
       });
     }
-  };
-
-  peerConnection.onconnectionstatechange = () => {
-    console.log("Connection state:", peerConnection.connectionState);
   };
 
   await peerConnection.setRemoteDescription(
@@ -171,21 +172,24 @@ export async function handleIceCandidate(candidate) {
       new RTCIceCandidate(candidate)
     );
   } catch (error) {
-    console.error("ICE error:", error);
+    console.error(error);
   }
 }
 
-export async function sendFile(file) {
+export async function sendFile(file, onProgress) {
   if (!dataChannel || dataChannel.readyState !== "open") {
     alert("Connection not ready. Wait a few seconds.");
     return;
   }
+
+  dataChannel.bufferedAmountLowThreshold = 65536;
 
   dataChannel.send(
     JSON.stringify({
       type: "file-info",
       fileName: file.name,
       fileType: file.type,
+      fileSize: file.size,
     })
   );
 
@@ -193,12 +197,22 @@ export async function sendFile(file) {
   let offset = 0;
 
   while (offset < file.size) {
+    if (dataChannel.bufferedAmount > 1000000) {
+      await new Promise((resolve) => {
+        dataChannel.onbufferedamountlow = resolve;
+      });
+    }
+
     const chunk = file.slice(offset, offset + chunkSize);
     const buffer = await chunk.arrayBuffer();
 
     dataChannel.send(buffer);
 
     offset += chunkSize;
+
+    const progress = Math.floor((offset / file.size) * 100);
+
+    onProgress(progress);
   }
 
   dataChannel.send(
