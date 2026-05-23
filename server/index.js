@@ -2,11 +2,15 @@ const express = require("express");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
 const server = http.createServer(app);
 
@@ -15,6 +19,25 @@ const io = new Server(server, {
     origin: "*",
   },
 });
+
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+
+  filename: (req, file, cb) => {
+    const uniqueName =
+      Date.now() + "-" + file.originalname;
+
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
 
 const rooms = {};
 
@@ -79,13 +102,39 @@ app.post("/join-room", (req, res) => {
   });
 });
 
+app.post(
+  "/upload/:roomCode",
+  upload.single("file"),
+  (req, res) => {
+    const { roomCode } = req.params;
+
+    if (!rooms[roomCode]) {
+      return res.status(404).json({
+        message: "Room not found",
+      });
+    }
+
+    const fileUrl = `${req.protocol}://${req.get(
+      "host"
+    )}/uploads/${req.file.filename}`;
+
+    io.to(roomCode).emit("new-file", {
+      fileName: req.file.originalname,
+      fileUrl,
+    });
+
+    res.json({
+      success: true,
+      fileUrl,
+    });
+  }
+);
+
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
   socket.on("join-room", (roomCode) => {
-    if (!rooms[roomCode]) {
-      return;
-    }
+    if (!rooms[roomCode]) return;
 
     socket.join(roomCode);
 
@@ -95,8 +144,6 @@ io.on("connection", (socket) => {
       "users-count",
       rooms[roomCode].users
     );
-
-    socket.to(roomCode).emit("peer-joined");
 
     socket.on("disconnect", () => {
       if (rooms[roomCode]) {
@@ -111,24 +158,7 @@ io.on("connection", (socket) => {
           deleteRoom(roomCode);
         }
       }
-
-      console.log("User disconnected:", socket.id);
     });
-  });
-
-  socket.on("offer", ({ roomCode, offer }) => {
-    socket.to(roomCode).emit("offer", offer);
-  });
-
-  socket.on("answer", ({ roomCode, answer }) => {
-    socket.to(roomCode).emit("answer", answer);
-  });
-
-  socket.on("ice-candidate", ({ roomCode, candidate }) => {
-    socket.to(roomCode).emit(
-      "ice-candidate",
-      candidate
-    );
   });
 });
 
