@@ -2,16 +2,9 @@ import { QRCodeCanvas } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import axios from "axios";
 import socket from "../utils/socket";
-import { APP_URL } from "../config";
-import {
-  createPeerConnection,
-  createOffer,
-  handleOffer,
-  handleAnswer,
-  handleIceCandidate,
-  sendFile,
-} from "../utils/webrtc";
+import { APP_URL, API_URL } from "../config";
 
 function Session() {
   const { roomCode } = useParams();
@@ -19,76 +12,54 @@ function Session() {
   const joinLink = `${APP_URL}/join/${roomCode}`;
 
   const [usersCount, setUsersCount] = useState(0);
-  const [receivedFile, setReceivedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [files, setFiles] = useState([]);
 
   useEffect(() => {
-    if (!roomCode) return;
-
     socket.emit("join-room", roomCode);
-
-    createPeerConnection(
-      socket,
-      roomCode,
-      () => {},
-      (fileData) => {
-        setReceivedFile(fileData);
-      },
-      (progress) => {
-        setDownloadProgress(progress);
-      }
-    );
 
     socket.on("users-count", (count) => {
       setUsersCount(count);
     });
 
-    socket.on("peer-joined", async () => {
-      await createOffer(socket, roomCode);
-    });
-
-    socket.on("offer", async (offer) => {
-      await handleOffer(
-        socket,
-        roomCode,
-        offer,
-        () => {},
-        (fileData) => {
-          setReceivedFile(fileData);
-        },
-        (progress) => {
-          setDownloadProgress(progress);
-        }
-      );
-    });
-
-    socket.on("answer", async (answer) => {
-      await handleAnswer(answer);
-    });
-
-    socket.on("ice-candidate", async (candidate) => {
-      await handleIceCandidate(candidate);
+    socket.on("new-file", (fileData) => {
+      setFiles((prev) => [fileData, ...prev]);
     });
 
     return () => {
       socket.off("users-count");
-      socket.off("peer-joined");
-      socket.off("offer");
-      socket.off("answer");
-      socket.off("ice-candidate");
+      socket.off("new-file");
     };
   }, [roomCode]);
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
 
-    if (file) {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
       setUploadProgress(0);
 
-      await sendFile(file, (progress) => {
-        setUploadProgress(progress);
-      });
+      await axios.post(
+        `${API_URL}/upload/${roomCode}`,
+        formData,
+        {
+          onUploadProgress: (progressEvent) => {
+            const percent = Math.round(
+              (progressEvent.loaded * 100) /
+                progressEvent.total
+            );
+
+            setUploadProgress(percent);
+          },
+        }
+      );
+    } catch (error) {
+      console.error(error);
+      alert("Upload failed");
     }
   };
 
@@ -104,7 +75,7 @@ function Session() {
           <div>
             <h1 className="text-4xl font-bold">PeerDrop 360</h1>
             <p className="text-gray-300 mt-2">
-              Share files instantly
+              Group File Sharing
             </p>
           </div>
 
@@ -163,30 +134,19 @@ function Session() {
           </div>
         )}
 
-        {downloadProgress > 0 && (
-          <div className="mt-6">
-            <div className="mb-2 text-purple-300 font-semibold">
-              Downloading: {downloadProgress}%
-            </div>
-
-            <div className="w-full bg-white/20 rounded-full h-4">
-              <div
-                className="bg-purple-400 h-4 rounded-full"
-                style={{ width: `${downloadProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {receivedFile && (
-          <a
-            href={receivedFile.url}
-            download={receivedFile.fileName}
-            className="block mt-8 bg-green-500 hover:bg-green-600 transition text-center py-4 rounded-2xl font-bold"
-          >
-            Download {receivedFile.fileName}
-          </a>
-        )}
+        <div className="mt-8 space-y-4">
+          {files.map((file, index) => (
+            <a
+              key={index}
+              href={file.fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="block bg-white/10 hover:bg-white/20 transition p-4 rounded-2xl"
+            >
+              📄 {file.fileName}
+            </a>
+          ))}
+        </div>
       </motion.div>
     </div>
   );
