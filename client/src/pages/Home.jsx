@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { API_URL } from "../config";
 
 function Home() {
   const [roomCode, setRoomCode] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const createRoom = async () => {
     try {
@@ -13,8 +16,9 @@ function Home() {
 
       const res = await axios.post(`${API_URL}/create-room`);
 
-      window.location.href = `/session/${res.data.roomCode}`;
-    } catch {
+      navigate(`/session/${res.data.roomCode}`);
+    } catch (error) {
+      console.error(error);
       alert("Server error");
     } finally {
       setLoading(false);
@@ -34,8 +38,9 @@ function Home() {
         roomCode,
       });
 
-      window.location.href = `/join/${roomCode}`;
-    } catch {
+      navigate(`/join/${roomCode}`);
+    } catch (error) {
+      console.error(error);
       alert("Room not found or expired");
     } finally {
       setLoading(false);
@@ -43,88 +48,52 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 flex justify-center items-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex justify-center items-center p-6">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 40 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl p-10 w-full max-w-xl text-white"
+        initial={{ opacity: 0, y: 25 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl p-10 w-full max-w-md text-white"
       >
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold tracking-tight">
-            PeerDrop 360
-          </h1>
-
-          <p className="text-gray-300 mt-4 text-lg">
-            Global browser-based file transfer
+          <h1 className="text-4xl font-bold">PeerDrop 360</h1>
+          <p className="text-gray-300 mt-3">
+            Fast browser-based global file transfer
           </p>
-
-          <div className="flex flex-wrap justify-center gap-3 mt-6">
-            <span className="bg-cyan-500/20 border border-cyan-400 text-cyan-300 px-4 py-2 rounded-full text-sm">
-              WebRTC
-            </span>
-
-            <span className="bg-purple-500/20 border border-purple-400 text-purple-300 px-4 py-2 rounded-full text-sm">
-              Secure Transfer
-            </span>
-
-            <span className="bg-green-500/20 border border-green-400 text-green-300 px-4 py-2 rounded-full text-sm">
-              No Installation
-            </span>
-          </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <button
             onClick={createRoom}
             disabled={loading}
-            className="w-full bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 transition text-white font-bold py-4 rounded-2xl shadow-lg"
+            className="w-full bg-cyan-500 hover:bg-cyan-600 transition py-4 rounded-2xl font-semibold"
           >
-            {loading ? "Creating..." : "Create New Session"}
+            {loading ? "Creating..." : "Create Session"}
           </button>
 
-          <div>
-            <input
-              type="text"
-              placeholder="Enter Room Code"
-              value={roomCode}
-              onChange={(e) =>
-                setRoomCode(e.target.value.toUpperCase())
-              }
-              className="w-full bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-white placeholder-gray-400 outline-none focus:border-cyan-400"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Enter Room Code"
+            value={roomCode}
+            onChange={(e) =>
+              setRoomCode(e.target.value.toUpperCase())
+            }
+            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-4 text-white placeholder-gray-400 outline-none focus:border-cyan-400"
+          />
 
           <button
             onClick={joinRoom}
             disabled={loading}
-            className="w-full bg-purple-500 hover:bg-purple-600 disabled:opacity-50 transition text-white font-bold py-4 rounded-2xl shadow-lg"
+            className="w-full bg-purple-500 hover:bg-purple-600 transition py-4 rounded-2xl font-semibold"
           >
-            {loading ? "Joining..." : "Join Existing Session"}
+            {loading ? "Joining..." : "Join Session"}
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mt-10 text-center">
-          <div className="bg-white/5 rounded-2xl p-4">
-            <div className="text-2xl mb-2">🌍</div>
-            <div className="text-sm text-gray-300">
-              Global Transfer
-            </div>
-          </div>
-
-          <div className="bg-white/5 rounded-2xl p-4">
-            <div className="text-2xl mb-2">⚡</div>
-            <div className="text-sm text-gray-300">
-              Fast Transfer
-            </div>
-          </div>
-
-          <div className="bg-white/5 rounded-2xl p-4">
-            <div className="text-2xl mb-2">🔒</div>
-            <div className="text-sm text-gray-300">
-              Secure
-            </div>
-          </div>
+        <div className="flex justify-center gap-4 mt-8 text-sm text-gray-300">
+          <span>🌍 Global</span>
+          <span>⚡ Fast</span>
+          <span>🔒 Secure</span>
         </div>
       </motion.div>
     </div>
