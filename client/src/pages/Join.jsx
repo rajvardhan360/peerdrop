@@ -74,67 +74,70 @@ function Join() {
   };
 
   const renderFile = (file, index) => {
-    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(
-      file.fileName
-    );
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.fileName);
+    const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(file.fileName);
+    const isPdf = /\.(pdf)$/i.test(file.fileName);
 
-    const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(
-      file.fileName
-    );
-
-    if (isImage) {
-      return (
-        <div
-          key={index}
-          className="bg-white/10 rounded-2xl overflow-hidden shadow-lg hover:bg-white/20 transition"
-        >
-          <img
-            src={file.fileUrl}
-            alt={file.fileName}
-            className="w-full h-48 object-cover"
-          />
-
-          <div className="p-3 text-sm text-cyan-300 truncate">
-            {file.fileName}
-          </div>
-        </div>
-      );
-    }
-
-    if (isVideo) {
-      return (
-        <div
-          key={index}
-          className="bg-white/10 rounded-2xl overflow-hidden shadow-lg hover:bg-white/20 transition"
-        >
-          <video
-            controls
-            className="w-full h-48 object-cover"
-          >
-            <source src={file.fileUrl} />
-          </video>
-
-          <div className="p-3 text-sm text-cyan-300 truncate">
-            {file.fileName}
-          </div>
-        </div>
-      );
-    }
+    const getFileIcon = () => {
+      if (isPdf) return "📕";
+      if (file.fileName.match(/\.(zip|rar|7z)$/i)) return "🗜️";
+      if (file.fileName.match(/\.(doc|docx)$/i)) return "📘";
+      if (file.fileName.match(/\.(xls|xlsx)$/i)) return "📗";
+      if (file.fileName.match(/\.(ppt|pptx)$/i)) return "📙";
+      return "📄";
+    };
 
     return (
-      <a
+      <div
         key={index}
-        href={file.fileUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="bg-white/10 rounded-2xl p-5 hover:bg-white/20 transition shadow-lg flex flex-col justify-center items-center h-48"
+        className="bg-white/10 rounded-2xl overflow-hidden shadow-lg hover:bg-white/20 transition h-[320px] flex flex-col"
       >
-        <div className="text-5xl mb-3">📄</div>
-
-        <div className="text-sm text-cyan-300 text-center break-words">
-          {file.fileName}
+        <div className="h-48 w-full bg-black/20 flex items-center justify-center overflow-hidden">
+          {isImage ? (
+            <img
+              src={file.fileUrl}
+              alt={file.fileName}
+              className="w-full h-full object-cover"
+            />
+          ) : isVideo ? (
+            <video
+              controls
+              className="w-full h-full object-cover"
+            >
+              <source src={file.fileUrl} />
+            </video>
+          ) : (
+            <div className="text-7xl">
+              {getFileIcon()}
+            </div>
+          )}
         </div>
-      </a>
+
+        <div className="p-3 flex-1">
+          <div className="text-sm text-cyan-300 text-center break-words line-clamp-2">
+            {file.fileName}
+          </div>
+        </div>
+
+        <div className="p-3 flex gap-2">
+          <a
+            href={file.fileUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white text-center py-2 rounded-xl font-semibold transition"
+          >
+            Open
+          </a>
+
+          <a
+            href={file.fileUrl}
+            download={file.fileName}
+            className="flex-1 bg-purple-500 hover:bg-purple-600 text-white text-center py-2 rounded-xl font-semibold transition"
+          >
+            Download
+          </a>
+        </div>
+      </div>
     );
   };
 
@@ -144,7 +147,7 @@ function Join() {
         initial={{ opacity: 0, y: 25 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl p-10 w-full max-w-5xl text-white"
+        className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl p-10 w-full max-w-6xl text-white"
       >
         <div className="grid md:grid-cols-2 gap-8">
           <div>
@@ -204,9 +207,7 @@ function Join() {
                     <div className="w-full bg-white/20 rounded-full h-4">
                       <div
                         className="bg-cyan-400 h-4 rounded-full"
-                        style={{
-                          width: `${uploadProgress}%`,
-                        }}
+                        style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
                   </div>
@@ -215,7 +216,7 @@ function Join() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[700px] overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[700px] overflow-y-auto pr-2">
             {files.map(renderFile)}
           </div>
         </div>
