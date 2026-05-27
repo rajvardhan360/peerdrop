@@ -26,9 +26,14 @@ function Session() {
       setFiles((prev) => [fileData, ...prev]);
     });
 
+    socket.on("room-history", (history) => {
+      setFiles([...history].reverse());
+    });
+
     return () => {
       socket.off("users-count");
       socket.off("new-file");
+      socket.off("room-history");
     };
   }, [roomCode]);
 
@@ -48,6 +53,8 @@ function Session() {
         formData,
         {
           onUploadProgress: (progressEvent) => {
+            if (!progressEvent.total) return;
+
             const percent = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
             );
@@ -56,6 +63,10 @@ function Session() {
           },
         }
       );
+
+      setTimeout(() => {
+        setUploadProgress(0);
+      }, 1000);
     } catch (error) {
       console.error(error);
       alert("Upload failed");
@@ -63,8 +74,14 @@ function Session() {
   };
 
   const renderFile = (file, index) => {
-    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.fileName);
-    const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(file.fileName);
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(
+      file.fileName
+    );
+
+    const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(
+      file.fileName
+    );
+
     const isPdf = /\.(pdf)$/i.test(file.fileName);
 
     const getFileIcon = () => {
@@ -79,9 +96,9 @@ function Session() {
     return (
       <div
         key={index}
-        className="bg-white/10 rounded-2xl overflow-hidden shadow-lg hover:bg-white/20 transition h-[320px] flex flex-col"
+        className="bg-white/10 rounded-2xl overflow-hidden shadow-lg h-[320px] flex flex-col"
       >
-        <div className="h-48 w-full bg-black/20 flex items-center justify-center overflow-hidden">
+        <div className="h-48 bg-black/20 flex items-center justify-center overflow-hidden">
           {isImage ? (
             <img
               src={file.fileUrl}
@@ -133,16 +150,17 @@ function Session() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex justify-center items-center p-6">
       <motion.div
-        initial={{ opacity: 0, y: 25 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl p-10 w-full max-w-6xl text-white"
       >
         <div className="grid md:grid-cols-2 gap-8">
           <div>
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h1 className="text-4xl font-bold">PeerDrop 360</h1>
+                <h1 className="text-4xl font-bold">
+                  PeerDrop 360
+                </h1>
                 <p className="text-gray-300 mt-2">
                   Group File Sharing
                 </p>
@@ -154,7 +172,10 @@ function Session() {
             </div>
 
             <div className="text-center mb-8">
-              <h2 className="text-lg text-gray-300">Room Code</h2>
+              <h2 className="text-lg text-gray-300">
+                Room Code
+              </h2>
+
               <div className="text-5xl font-bold mt-3 tracking-widest text-cyan-300">
                 {roomCode}
               </div>
@@ -197,7 +218,9 @@ function Session() {
                 <div className="w-full bg-white/20 rounded-full h-4">
                   <div
                     className="bg-cyan-400 h-4 rounded-full"
-                    style={{ width: `${uploadProgress}%` }}
+                    style={{
+                      width: `${uploadProgress}%`,
+                    }}
                   />
                 </div>
               </div>

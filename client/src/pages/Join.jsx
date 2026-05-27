@@ -22,9 +22,14 @@ function Join() {
       setFiles((prev) => [fileData, ...prev]);
     });
 
+    socket.on("room-history", (history) => {
+      setFiles([...history].reverse());
+    });
+
     return () => {
       socket.off("users-count");
       socket.off("new-file");
+      socket.off("room-history");
     };
   }, []);
 
@@ -59,6 +64,8 @@ function Join() {
         formData,
         {
           onUploadProgress: (progressEvent) => {
+            if (!progressEvent.total) return;
+
             const percent = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
             );
@@ -67,6 +74,10 @@ function Join() {
           },
         }
       );
+
+      setTimeout(() => {
+        setUploadProgress(0);
+      }, 1000);
     } catch (error) {
       console.error(error);
       alert("Upload failed");
@@ -74,8 +85,14 @@ function Join() {
   };
 
   const renderFile = (file, index) => {
-    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.fileName);
-    const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(file.fileName);
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(
+      file.fileName
+    );
+
+    const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(
+      file.fileName
+    );
+
     const isPdf = /\.(pdf)$/i.test(file.fileName);
 
     const getFileIcon = () => {
@@ -90,9 +107,9 @@ function Join() {
     return (
       <div
         key={index}
-        className="bg-white/10 rounded-2xl overflow-hidden shadow-lg hover:bg-white/20 transition h-[320px] flex flex-col"
+        className="bg-white/10 rounded-2xl overflow-hidden shadow-lg h-[320px] flex flex-col"
       >
-        <div className="h-48 w-full bg-black/20 flex items-center justify-center overflow-hidden">
+        <div className="h-48 bg-black/20 flex items-center justify-center overflow-hidden">
           {isImage ? (
             <img
               src={file.fileUrl}
@@ -144,9 +161,8 @@ function Join() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 flex justify-center items-center p-6">
       <motion.div
-        initial={{ opacity: 0, y: 25 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl p-10 w-full max-w-6xl text-white"
       >
         <div className="grid md:grid-cols-2 gap-8">
@@ -207,7 +223,9 @@ function Join() {
                     <div className="w-full bg-white/20 rounded-full h-4">
                       <div
                         className="bg-cyan-400 h-4 rounded-full"
-                        style={{ width: `${uploadProgress}%` }}
+                        style={{
+                          width: `${uploadProgress}%`,
+                        }}
                       />
                     </div>
                   </div>

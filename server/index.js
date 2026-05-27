@@ -3,7 +3,6 @@ const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 const multer = require("multer");
-const path = require("path");
 const fs = require("fs");
 
 const app = express();
@@ -30,10 +29,7 @@ const storage = multer.diskStorage({
   },
 
   filename: (req, file, cb) => {
-    const uniqueName =
-      Date.now() + "-" + file.originalname;
-
-    cb(null, uniqueName);
+    cb(null, Date.now() + "-" + file.originalname);
   },
 });
 
@@ -58,7 +54,6 @@ function deleteRoom(roomCode) {
   if (rooms[roomCode]) {
     clearTimeout(rooms[roomCode].expiryTimer);
     delete rooms[roomCode];
-    console.log("Room deleted:", roomCode);
   }
 }
 
@@ -80,12 +75,10 @@ app.post("/create-room", (req, res) => {
   rooms[roomCode] = {
     users: 0,
     expiryTimer,
+    files: [],
   };
 
-  res.json({
-    roomCode,
-    expiresIn: "1 hour",
-  });
+  res.json({ roomCode });
 });
 
 app.post("/join-room", (req, res) => {
@@ -93,12 +86,12 @@ app.post("/join-room", (req, res) => {
 
   if (!rooms[roomCode]) {
     return res.status(404).json({
-      message: "Room not found or expired",
+      message: "Room not found",
     });
   }
 
   res.json({
-    message: "Room found",
+    success: true,
   });
 });
 
@@ -114,25 +107,24 @@ app.post(
       });
     }
 
-    const fileUrl = `${req.protocol}://${req.get(
-      "host"
-    )}/uploads/${req.file.filename}`;
-
-    io.to(roomCode).emit("new-file", {
+    const fileData = {
       fileName: req.file.originalname,
-      fileUrl,
-    });
+      fileUrl: `${req.protocol}://${req.get(
+        "host"
+      )}/uploads/${req.file.filename}`,
+    };
+
+    rooms[roomCode].files.push(fileData);
+
+    io.to(roomCode).emit("new-file", fileData);
 
     res.json({
       success: true,
-      fileUrl,
     });
   }
 );
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
   socket.on("join-room", (roomCode) => {
     if (!rooms[roomCode]) return;
 
@@ -145,18 +137,23 @@ io.on("connection", (socket) => {
       rooms[roomCode].users
     );
 
+    socket.emit(
+      "room-history",
+      rooms[roomCode].files
+    );
+
     socket.on("disconnect", () => {
-      if (rooms[roomCode]) {
-        rooms[roomCode].users--;
+      if (!rooms[roomCode]) return;
 
-        io.to(roomCode).emit(
-          "users-count",
-          rooms[roomCode].users
-        );
+      rooms[roomCode].users--;
 
-        if (rooms[roomCode].users <= 0) {
-          deleteRoom(roomCode);
-        }
+      io.to(roomCode).emit(
+        "users-count",
+        rooms[roomCode].users
+      );
+
+      if (rooms[roomCode].users <= 0) {
+        deleteRoom(roomCode);
       }
     });
   });
@@ -165,5 +162,5 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log("Server running");
 });
